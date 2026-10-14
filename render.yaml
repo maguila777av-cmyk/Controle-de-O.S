@@ -1,0 +1,17 @@
+# Blueprint do Render: UM serviço que entrega o front (dist/) e a API (/api/*).
+services:
+  - type: web
+    name: controle-de-o-s
+    runtime: node
+    plan: free
+    rootDir: .                      # raiz do repositório (NÃO use "backend")
+    buildCommand: npm run build:render
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: GEMINI_API_KEY
+        sync: false                 # cole a chave no painel do Render (nunca no código)
+      - key: FRONTEND_ORIGIN
+        value: https://philippin999xz-ai.github.io   # só se ainda usar o GitHub Pages
