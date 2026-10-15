@@ -1,18 +1,16 @@
 {
-  "name": "controle-os-front",
+  "name": "controle-os",
   "private": true,
-  "version": "2.1.0",
+  "version": "3.0.0",
   "type": "module",
-  "engines": { "node": ">=20" },
   "scripts": {
-    "dev": "node scripts/sync-core.mjs && vite",
-    "prebuild": "node scripts/sync-core.mjs",
+    "dev": "vite",
     "build": "vite build",
-    "build:render": "npm install --include=dev && npm run build && npm --prefix backend install --omit=dev",
-    "preview": "vite preview",
-    "start": "node backend/server.js"
+    "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/barlow-condensed": "^5.0.0",
+    "@fontsource/ibm-plex-sans": "^5.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "xlsx": "^0.18.5"

@@ -1,35 +1,56 @@
-# Controle de O.S. — React (Vite) + backend Node, em um só serviço no Render
+# Controle de O.S. · Açoforja (versão 3, React + Vite)
 
-## Por que o front tinha sumido
-O serviço do Render rodava só `backend/server.js`, que era apenas API (a raiz `/` devolvia `{"ok":true}`),
-e o Render **não instala `devDependencies`** em produção, então o `vite build` nunca gerava a pasta `dist/`.
-Agora o servidor entrega o `dist/` e o build instala o Vite explicitamente.
+Front end reescrito do zero a partir dos dois backups. Um único aplicativo com duas áreas:
 
-## Render (recomendado: serviço único)
-No painel do serviço `controle-de-o-s` → Settings:
-| Campo | Valor |
-|---|---|
-| Root Directory | *(vazio — raiz do repositório)* |
-| Build Command | `npm run build:render` |
-| Start Command | `npm start` |
-| Health Check Path | `/api/health` |
-| Environment | `GEMINI_API_KEY` (obrigatória), `NODE_VERSION=22` |
-Depois: **Manual Deploy → Clear build cache & deploy**. Abra `https://SEU-SERVICO.onrender.com/`.
-(Ou use o `render.yaml` como Blueprint.) `/api/health` mostra `"front": true` quando o dist foi encontrado.
+- **Aplicativo** (`#/`): Nova O.S. (foto → Gemini, com OCR local de reserva), Pesquisa, Histórico, Painel, Assistente e Conta.
+- **Administração** (`#/admin`): Painel com filtros, Ordens (editar, excluir, exportar), Usuários, Cargos e permissões, Manuais (planilhas) e Configurações (teste do servidor, backup).
 
-## Alternativa: front no GitHub Pages
-`npm run build` e publique `dist/`. No Pages o app já chama o Render sozinho; no Render mantenha
-`FRONTEND_ORIGIN=https://SEU-USUARIO.github.io` (CORS). Para outro endereço de API: `VITE_API_BASE=https://...`.
+Os antigos `index.html` e `admin.html` não existem mais: tudo está em React.
 
-## Desenvolvimento local
-`npm install` · em um terminal `npm --prefix backend install && GEMINI_API_KEY=... node backend/server.js` ·
-em outro `npm run dev` (o `/api` é encaminhado para `localhost:10000`; mude com `VITE_PROXY_TARGET`).
+## Rodar
+
+```bash
+npm install
+npm run dev        # desenvolvimento em http://localhost:5173
+npm run build      # gera a pasta dist/ (publicável em qualquer hospedagem estática)
+npm run preview    # testa o build
+```
+
+Para usar outro backend, crie `.env` com `VITE_API_BASE=https://SEU-SERVICO.onrender.com`.
+
+## Publicar
+
+- **GitHub Pages**: envie para a branch `main`; `.github/workflows/deploy.yml` faz o build e publica. Em Settings → Pages escolha "GitHub Actions".
+- **Netlify / Cloudflare Pages**: comando `npm run build`, pasta `dist`. `public/_headers` traz os cabeçalhos de segurança.
+- As rotas usam `#`, então não é preciso configurar redirecionamentos.
+
+## Backend (`backend/`)
+
+Node + Express; repassa as chamadas de IA ao Gemini sem expor a chave.
+
+```bash
+cd backend && npm install && node server.js
+```
+
+No Render defina `GEMINI_API_KEY` (chave do Google AI Studio, só no servidor) e `FRONTEND_ORIGIN` (endereços do front, separados por vírgula; ex.: `https://philippin999xz-ai.github.io`).
+
+`backend/legacy-fastapi/` guarda o `main.py` antigo (FastAPI com chave de acesso e planilha mestra). O front atual não usa esse backend.
+
+## Dados e compatibilidade
+
+As chaves de armazenamento são as mesmas das versões anteriores (`os_regs`, `os_users`, `os_cargos`, fotos em `os_fotos`, manuais em `os_manuais`). Abrindo o app novo **no mesmo endereço** de antes, as O.S., usuários, PINs e fotos continuam lá. Em outro endereço: Administração → Config. → Baixar backup, e importe no novo.
 
 ## Estrutura
-- `src/App.jsx` + `src/components/*` — interface · `src/ia.js` — leitura/normalização da resposta da IA
-- `src/api.js` — conexão com o backend (acorda o Render e tenta de novo) · `src/core.js` — usuários, PIN, dados locais
-- `public/core.js` é **gerado** de `src/core.js` (script `scripts/sync-core.mjs`); `public/admin.html` é o painel antigo
-- `backend/server.js` — API + serve `dist/` · `legado-python-fastapi/` — backend antigo, não usado
-- `GEMINI_MODEL` (opcional, no Render) força o modelo da IA no servidor.
 
-Observação: usuários, PIN e OS ficam no navegador de cada aparelho (localStorage); o PIN não é segurança de servidor.
+```
+src/
+  lib/         regras e dados (core.js, api.js, ia.js, stats.js, exportar.js, ocrLocal.js…)
+  components/  Shell, Analitico, Charts, OSCard, UI (avisos e diálogos), Server…
+  pages/       telas do aplicativo; pages/admin/ telas do painel
+  styles.css   tokens (cores, fontes) e estilos
+```
+
+## Observações
+
+- A biblioteca `xlsx` (0.18.5, a última no npm) só é baixada ao exportar ou importar planilhas. Importe apenas planilhas de fontes confiáveis.
+- Usuários e PINs ficam no navegador do aparelho: o PIN barra uso casual, não é segurança de servidor.
